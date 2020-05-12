@@ -13,7 +13,7 @@
                         <div class="box"></div>
                         <div class="title">
                             <img :src="src">
-                            <div class="name">{{text}}</div>
+                            <div class="name" style="color: aqua;">{{text}}</div>
                             <div class="right">
                                 <eva-icon width="15" height="15" name="layers" animation="pulse" fill="grey" class="layers"></eva-icon>
                                 <div class="check">签到</div>
@@ -73,13 +73,24 @@
         </div>
         <div class="play-list">
             <ul class="lists">
-                <li class="play-item" @click="getListDetail(play.id)" v-for="play in playLists" :key="play.id">{{play.name}}</li>
+                <li class="play-item" @click="getListDetail(play.id)" v-for="play in playLists" :key="play.id" :title="play.name">{{play.name}}</li>
             </ul>
         </div>
         <div class="song-list">
             <ul class="songs">
                 <li class="song-item" @click="startPlay(song.id)" v-for="song in songs" :key="song.id">{{song.name}}</li>
             </ul>
+        </div>
+        <div class="play-bar">
+            <div class="prev-play-next">
+
+            </div>
+            <div class="center-bar">
+
+            </div>
+            <div class="play-type">
+
+            </div>
         </div>
         <audio :src="playSrc" ref="audio"></audio>
     </div>   
@@ -155,6 +166,7 @@ export default {
                 callback: (res) => {
                     let link = JSON.parse(res).data[0] || {}
                     this.$refs.audio.src = link.url
+                    this.$refs.audio.play();
                     console.log(res)
                 }
             })
@@ -164,7 +176,8 @@ export default {
 </script>
 <style lang="less" scoped>
     @head: 100px;
-    @leftWidth: 400px;
+    @leftWidth: 250px;
+    @barHeight: 40px;
     ul,li{
         margin: 0;
         padding: 0;
@@ -344,6 +357,8 @@ export default {
             top: @head;
             width: @leftWidth;
             bottom: 0;
+            text-overflow: ellipsis;
+            white-space: nowrap;
             overflow-x: hidden;
             overflow-y: auto;
             background: rgba(8, 253, 253, .5);
@@ -364,6 +379,28 @@ export default {
                 border-top: 1px dotted #6cf;
                 padding: 0 20px;
                 cursor: pointer;
+            }
+        }
+        .play-bar{
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 3;
+            height: @barHeight;
+            background: #6cf;
+            display: flex;
+            .prev-play-next,.center-bar,.play-type{
+                height: @barHeight;
+            }
+            .prev-play-next{
+                width: 200px;
+            }
+            .play-type{
+                width: 200px;
+            }
+            .center-bar{
+                flex: 1;
             }
         }
     }
