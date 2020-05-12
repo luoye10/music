@@ -60,17 +60,19 @@ export default {
                 callback: function(res) {
                     var obj = res;
                     obj = JSON.parse(obj);
+                    localStorage.setItem('loginInfo', res)
+                    that.$root.loginUser = res;
                     if(obj.code === 200){
                         layers({
                             msg: '登录成功',
                             color: 'success',
                             fn: function(){
-                                that.$router.push({name:'HomePage'});
+                                that.$router.push({name:'HomePage',params:{loginI: res}});
                             }
                         })
                     }else{
                         layers({
-                            msg: '登录失败',
+                            msg: obj.message || obj.msg || '登录失败',
                             color: 'error'
                         })
                     }

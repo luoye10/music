@@ -12,7 +12,7 @@ const LoginBox = () => import('@/components/LoginBox');
 const routes = [
     {
         path: '/',
-        redirect: '/HomePage'
+        redirect: '/LoginBox'
     },
     {
         path: '/HomePage',

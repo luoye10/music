@@ -8,12 +8,12 @@
             <div class="information">
                 <img :src="src" class="img">
                 <div class="my-name" @click='handleClick'>
-                    <span class="text">零落成图</span>  
+                    <span class="text-word">{{text}}</span>  
                     <div class="content" :style="{display: isShow ? 'block' : 'none'}">
                         <div class="box"></div>
                         <div class="title">
                             <img :src="src">
-                            <div class="name">零落成图</div>
+                            <div class="name">{{text}}</div>
                             <div class="right">
                                 <eva-icon width="15" height="15" name="layers" animation="pulse" fill="grey" class="layers"></eva-icon>
                                 <div class="check">签到</div>
@@ -71,26 +71,100 @@
                 </div>            
             </div>        
         </div>
+        <div class="play-list">
+            <ul class="lists">
+                <li class="play-item" @click="getListDetail(play.id)" v-for="play in playLists" :key="play.id">{{play.name}}</li>
+            </ul>
+        </div>
+        <div class="song-list">
+            <ul class="songs">
+                <li class="song-item" @click="startPlay(song.id)" v-for="song in songs" :key="song.id">{{song.name}}</li>
+            </ul>
+        </div>
+        <audio :src="playSrc" ref="audio"></audio>
     </div>   
 </template>
 <script>
 import avatar from '../img/z.jpg'
-
+import request from '../utils/request'
 export default {
     data(){
         return {
             src: avatar,
-            isShow: false
+            text: '',
+            isShow: false,
+            playLists: [
+                {}
+            ],
+            songs: [],
+            playSrc: ''
         }
+    },
+    mounted() {
+        
+        this.getInfo();
+        let info = this.$route.params.loginI
+        info = JSON.parse(info)
+        debugger
+        let avatarUrl = info.profile.avatarUrl
+        this.src = avatarUrl
+        let name = info.profile.nickname
+        this.text = name
+        console.log(info)
     },
     methods: {
         handleClick(){
             this.isShow = !this.isShow
+        },
+        getInfo() {
+            let info = localStorage.getItem('loginInfo')
+            info = JSON.parse(info)
+            let uid = info.profile.userId
+            let url = 'http://192.168.1.3:3000/user/playlist?uid=' + uid
+            let that = this
+            request({
+                url: url,
+                data: {},
+                type: 'get',
+                callback: function(res) {
+                    let list = JSON.parse(res).playlist
+                    that.playLists = list
+                    // console.log(res
+                }
+            })
+        },
+        getListDetail(id) {
+            let url = 'http://192.168.1.3:3000/playlist/detail?id=' + id
+            request({
+                type: 'get',
+                url: url,
+                callback: (res) => {
+                    let songs = JSON.parse(res)
+                    songs = songs.playlist.tracks
+                    this.songs = songs
+                    // debugger
+                    console.log(res)
+                }
+            })
+        },
+        startPlay(id) {
+            let url = 'http://192.168.1.3:3000/song/url?id=' + id;
+            request({
+                url: url,
+                type: 'get',
+                callback: (res) => {
+                    let link = JSON.parse(res).data[0] || {}
+                    this.$refs.audio.src = link.url
+                    console.log(res)
+                }
+            })
         }
     }
 }
 </script>
 <style lang="less" scoped>
+    @head: 100px;
+    @leftWidth: 400px;
     ul,li{
         margin: 0;
         padding: 0;
@@ -101,7 +175,7 @@ export default {
         height: 100%;
         .head{
             width: 100%;
-            height: 10%;
+            height: @head;
             background: red;
             color: white;
             position: relative;
@@ -110,42 +184,43 @@ export default {
                 position: relative;
                 .music-icon{
                     margin-left: 10px;
-                    margin-top: 15px;
+                    margin-top: 30px;
                 }
                 .word{
                     font-family: my;
                     font-size: 20px;
                     position: absolute;
                     left: 50px;
-                    top: 12px;
+                    top: 30px;
                     letter-spacing: .3em;
                 }
             }
             .information{
                 position: absolute;
-                right: 150px;
+                right: 200px;
                 top: 0;
                 .img{
                     width: 30px;
                     height: 30px;
                     border-radius: 50%;
-                    margin-top: 20px;
+                    margin-top: 30px;
                 }
                 .my-name{  
-                    cursor: pointer;                  
-                    .text{
+                    cursor: pointer;                
+                    .text-word{
                         width: 100px;
+                        height: 30px;
                         font-size: 16px;
                         position: absolute;
                         left: 40px;
-                        top: 23px;
+                        top: 30px;
                     }
                     .content{
                         width: 300px;
                         height: 300px;
                         background: whitesmoke;
                         position: absolute;
-                        left: -150px;
+                        left: -100px;
                         top: 80px;                        
                         .box{
                             width: 0;
@@ -188,7 +263,6 @@ export default {
                                 top: 15px;
                                 .layers{
                                    margin-left: 5px;
-                                   margin-top: 2px;
                                 }
                                 .check{
                                     font-size: 12px;
@@ -262,6 +336,34 @@ export default {
                         }
                     }
                 }
+            }
+        }
+        .play-list{
+            position: absolute;
+            left: 0;
+            top: @head;
+            width: @leftWidth;
+            bottom: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+            background: rgba(8, 253, 253, .5);
+            .play-item{
+                cursor: pointer;
+                padding: 10px 20px;
+            }
+        }
+        .song-list{
+            position: absolute;
+            top: @head;
+            left: @leftWidth;
+            right: 0;
+            bottom: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+            .song-item{
+                border-top: 1px dotted #6cf;
+                padding: 0 20px;
+                cursor: pointer;
             }
         }
     }
