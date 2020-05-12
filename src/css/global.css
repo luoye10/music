@@ -1,0 +1,12 @@
+@font-face{
+    font-family: my;
+    src: url(../font/a.ttf);
+}
+html,body{
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+    font-family: my;
+}

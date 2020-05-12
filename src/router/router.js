@@ -6,23 +6,24 @@ import VueRouter from 'vue-router';
 const Index = () => import(/* webpackChunkName: "Index" */ '@/components/Index');
 const A = () => import(/* webpackChunkName: "A"*/ '@/components/A');
 const B = () => import(/* webpackChunkName: "B"*/ '@/components/B');
+const HomePage = () => import('@/components/HomePage');
+const LoginBox = () => import('@/components/LoginBox');
 
 const routes = [
     {
-        name: 'Index',
         path: '/',
-        component: Index
+        redirect: '/HomePage'
     },
     {
-        path: '/A',
-        name: 'A',
-        component: A
+        path: '/HomePage',
+        name: 'HomePage',
+        component: HomePage
     },
     {
-        name: 'B',
-        path: '/B',
-        component: B
-    }
+        path: '/LoginBox',
+        name: 'LoginBox',
+        component: LoginBox
+    },
 ]
 Vue.use(VueRouter);
 
