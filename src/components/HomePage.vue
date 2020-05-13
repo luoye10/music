@@ -73,7 +73,7 @@
         </div>
         <div class="play-list">
             <ul class="lists">
-                <li class="play-item" @click="getListDetail(play.id)" v-for="play in playLists" :key="play.id" :title="play.name">{{play.name}}</li>
+                <li class="play-item" :class="{active: playListId === play.id}" @click="getListDetail(play.id)" v-for="play in playLists" :key="play.id" :title="play.name">{{play.name}}</li>
             </ul>
         </div>
         <div class="song-list">
@@ -124,9 +124,10 @@ export default {
                 {}
             ],
             songs: [],
+            playListIndex: null,
             playSrc: '',
             isPlay: false,
-            playIndex: null,
+            playListId: null,
             currentTime: '00:00',
             percentage: '0',
             totalTime: '00:00'
@@ -164,6 +165,7 @@ export default {
             })
         },
         getListDetail(id) {
+            this.playListId = id;
             let url = 'http://192.168.1.3:3000/playlist/detail?id=' + id
             request({
                 type: 'get',
@@ -348,7 +350,8 @@ export default {
                         background: whitesmoke;
                         position: absolute;
                         left: -100px;
-                        top: 80px;                     
+                        top: 80px;
+                        z-index: 2;                     
                         .box{
                             width: 0;
                             height: 0;
@@ -475,12 +478,28 @@ export default {
             overflow-x: hidden;
             overflow-y: auto;
             background: rgba(8, 253, 253, .5);
+            &::-webkit-scrollbar{
+                width: 5px;
+                background: #6cf;
+            }
+            &::-webkit-scrollbar-track{
+                width: 5px;
+            }
+            &::-webkit-scrollbar-thumb{
+                width: 5px;
+                height: 20px;
+                background: grey;
+                border-radius: 3px;
+            }
             .play-item{
                 cursor: pointer;
                 padding: 10px 20px;
                 text-overflow: ellipsis;
                 white-space: nowrap;
                 overflow: hidden;
+                &.active{
+                    box-shadow: 0 0 10px 0px;
+                }
             }
         }
         .song-list{
