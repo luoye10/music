@@ -13,7 +13,7 @@
                         <div class="box"></div>
                         <div class="title">
                             <img :src="src">
-                            <div class="name" style="color: aqua;">{{text}}</div>
+                            <div class="name">{{text}}</div>
                             <div class="right">
                                 <eva-icon width="15" height="15" name="layers" animation="pulse" fill="grey" class="layers"></eva-icon>
                                 <div class="check">签到</div>
@@ -77,27 +77,43 @@
             </ul>
         </div>
         <div class="song-list">
-            <ul class="songs">
-                <li class="song-item" @click="startPlay(song.id)" v-for="song in songs" :key="song.id">{{song.name}}</li>
+            <ul class="songs" ref="songs">
+                <li class="song-item" :class="{active: index === playIndex}" @click="startPlay(song.id, index)" v-for="(song, index) in songs" :key="song.id">
+                    <div class="num">{{song.num}}</div>
+                    <div class="name">{{song.name}}</div>
+                    <div class="singer">{{song.singer}}</div>
+                    <div class="album">{{song.album}}</div>
+                    <div class="time">{{song.time}}</div>
+                </li>
             </ul>
         </div>
         <div class="play-bar">
             <div class="prev-play-next">
-
+                <eva-icon name="skip-back" fill="aqua" @click="previous" width="24" height="24"></eva-icon>
+                <div @click="playOrPaused">
+                    <eva-icon name="play-circle" width="30" height="30" fill="aqua" v-show="!isPlay"></eva-icon>
+                    <eva-icon name="pause-circle" width="30" height="30" fill="aqua" v-show="isPlay"></eva-icon>
+                </div>                
+                <eva-icon name="skip-forward" fill="aqua" @click="next" width="24" height="24"></eva-icon>
             </div>
             <div class="center-bar">
-
+                <div class="current-time">{{currentTime}}</div>
+                <div class="bar-percentage" @click="widthchange" ref="bar">
+                    <div class="play-time" :style="{width: percentage + '%'}"></div>
+                </div>
+                <div class="total-time">{{totalTime}}</div>
             </div>
             <div class="play-type">
 
             </div>
         </div>
-        <audio :src="playSrc" ref="audio"></audio>
+        <audio :src="playSrc" ref="audio" @timeupdate="timechange"></audio>
     </div>   
 </template>
 <script>
 import avatar from '../img/z.jpg'
 import request from '../utils/request'
+import layer from '../utils/zLayer'
 export default {
     data(){
         return {
@@ -108,15 +124,18 @@ export default {
                 {}
             ],
             songs: [],
-            playSrc: ''
+            playSrc: '',
+            isPlay: false,
+            playIndex: null,
+            currentTime: '00:00',
+            percentage: '0',
+            totalTime: '00:00'
         }
     },
-    mounted() {
-        
+    mounted() {        
         this.getInfo();
         let info = this.$route.params.loginI
         info = JSON.parse(info)
-        debugger
         let avatarUrl = info.profile.avatarUrl
         this.src = avatarUrl
         let name = info.profile.nickname
@@ -140,7 +159,7 @@ export default {
                 callback: function(res) {
                     let list = JSON.parse(res).playlist
                     that.playLists = list
-                    // console.log(res
+                    // console.log(res)
                 }
             })
         },
@@ -152,31 +171,126 @@ export default {
                 callback: (res) => {
                     let songs = JSON.parse(res)
                     songs = songs.playlist.tracks
-                    this.songs = songs
+                    let arr = songs.map((item,index) => {
+                        index++
+                        return {
+                            id: item.id,
+                            num: index < 10 ? '0' + index : index,
+                            name: item.name,
+                            singer: item.ar[0].name,
+                            album: item.al.name,
+                            time: this.timeDeal(item.dt),
+                            totalTime: item.dt
+                        }
+                    })
+                    this.songs = arr
                     // debugger
-                    console.log(res)
+                    console.log(this.songs)
                 }
             })
         },
-        startPlay(id) {
+        timeDeal(time) {
+            let m = '',s = ''
+            m = Math.floor(time / 1000 / 60)
+            s = String(time % 60000).slice(0,2)
+            m = m < 10 ? '0' + m : m;
+            s = s < 10 ? '0' + s : s;
+            return m + ':' + s;
+        }, 
+        startPlay(id, index) {
+            this.playIndex = index
             let url = 'http://192.168.1.3:3000/song/url?id=' + id;
             request({
                 url: url,
                 type: 'get',
                 callback: (res) => {
                     let link = JSON.parse(res).data[0] || {}
+                    if (!link.url) {
+                        layer({
+                            msg: '该歌曲暂无版权',
+                            time: 1500,
+                            color: 'error'
+                        })
+                        this.next();
+                        return
+                    }
                     this.$refs.audio.src = link.url
                     this.$refs.audio.play();
-                    console.log(res)
+                    this.isPlay = true;
+                    this.totalTime = this.songs[index].time
                 }
             })
+        },
+        playOrPaused() {
+            this.isPlay = !this.isPlay
+            if (this.isPlay) {
+                this.$refs.audio.play();
+            } else {
+                this.$refs.audio.pause();
+            }
+        },
+        previous(){
+            if(this.playIndex === 0){
+                this.playIndex = this.songs.length - 1
+            }else{
+                this.playIndex--
+            }           
+            let index = this.playIndex
+            let song = this.songs[index]
+            this.startPlay(song.id, index)
+            console.log(song)
+
+        },
+        next(){
+            if (this.playIndex === this.songs.length - 1) {
+                this.playIndex = 0
+                this.$refs.songs.scrollIntoView({behavior: 'smooth'})
+            }else {
+                this.playIndex++
+            }
+            let index = this.playIndex
+            let song = this.songs[index]
+            this.startPlay(song.id, index)
+            console.log(song)
+        },
+        timechange(e) {
+            let time = e.target.currentTime, per
+            time = Math.floor(time)
+            let minute, second, str
+            minute = Math.floor(time / 60)
+            second = Math.floor(time % 60)
+            per = time * 1000 / this.songs[this.playIndex].totalTime * 100
+            minute = minute < 10 ? '0' + minute : minute
+            second = second < 10 ? '0' + second : second
+            str = minute + ':' + second
+            this.currentTime = str
+            this.percentage = per
+            this.isEnded()
+        },
+        widthchange(e){
+            let x = e.offsetX
+            let width = parseInt(this.getStyle(this.$refs.bar).width)
+            let per = x / width * 100
+            this.percentage = per
+            let currentTime = this.songs[this.playIndex].totalTime * per / 100
+            let ct = this.timeDeal(currentTime)
+            this.$refs.audio.currentTime = currentTime / 1000;
+            this.currentTime = ct
+        },
+        getStyle(el) {
+            return window.getComputedStyle(el, null)
+        },
+        isEnded(){
+            if(this.$refs.audio.ended){
+                this.next()
+            }
         }
     }
 }
 </script>
 <style lang="less" scoped>
     @head: 100px;
-    @leftWidth: 250px;
+    @leftWidth: 220px;
     @barHeight: 40px;
     ul,li{
         margin: 0;
@@ -193,6 +307,7 @@ export default {
             color: white;
             position: relative;
             .music{
+                font-family: my;
                 margin-left: 10px;
                 position: relative;
                 .music-icon{
@@ -200,7 +315,6 @@ export default {
                     margin-top: 30px;
                 }
                 .word{
-                    font-family: my;
                     font-size: 20px;
                     position: absolute;
                     left: 50px;
@@ -234,7 +348,7 @@ export default {
                         background: whitesmoke;
                         position: absolute;
                         left: -100px;
-                        top: 80px;                        
+                        top: 80px;                     
                         .box{
                             width: 0;
                             height: 0;
@@ -352,33 +466,77 @@ export default {
             }
         }
         .play-list{
+            font-family: my;
             position: absolute;
             left: 0;
             top: @head;
             width: @leftWidth;
-            bottom: 0;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            bottom: @barHeight;
             overflow-x: hidden;
             overflow-y: auto;
             background: rgba(8, 253, 253, .5);
             .play-item{
                 cursor: pointer;
                 padding: 10px 20px;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                overflow: hidden;
             }
         }
         .song-list{
+            font-size: 14px;
             position: absolute;
             top: @head;
             left: @leftWidth;
             right: 0;
-            bottom: 0;
+            bottom: @barHeight;
             overflow-x: hidden;
             overflow-y: auto;
+            &::-webkit-scrollbar{
+                width: 5px;
+                background: aquamarine;
+            }
+            &::-webkit-scrollbar-track{
+                width: 5px;
+            }
+            &::-webkit-scrollbar-thumb{
+                width: 5px;
+                height: 100px;
+                background: grey;
+                border-radius: 3px;
+            }
             .song-item{
                 border-top: 1px dotted #6cf;
-                padding: 0 20px;
+                padding: 10px 20px;
                 cursor: pointer;
+                &.active{
+                    background: #e4dfdf;
+                }
+                div{
+                    display: inline-block;
+                    color: grey;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-align: left;
+                }
+                .num{
+                    width: 100px;
+                }
+                .name{
+                    width: 300px;
+                    color: black;
+                }
+                .singer{
+                    width: 200px;
+                }
+                .album{
+                    width: 200px;
+                    margin-right: 40px;
+                }
+                .time{
+                    width: 60px;
+                }
             }
         }
         .play-bar{
@@ -394,13 +552,39 @@ export default {
                 height: @barHeight;
             }
             .prev-play-next{
-                width: 200px;
+                width: 220px;
+                text-align: center;
+                div{
+                    display: inline-block;
+                    margin: 5px 25px 0;
+                }
             }
             .play-type{
                 width: 200px;
             }
             .center-bar{
                 flex: 1;
+                display: flex;
+                @timeWidth: 50px;
+                @barH: 6px;
+                .current-time,.total-time{
+                    width: @timeWidth;
+                    line-height: @barHeight;
+                    margin: 0 10px;
+                }
+                .bar-percentage{
+                    flex: 1;
+                    height: @barH;
+                    background: turquoise;
+                    border-radius: @barH / 2;
+                    margin: (@barHeight - @barH) / 2;
+                    .play-time{
+                        height: @barH;
+                        background: red;
+                        border-radius: @barH / 2;
+                        cursor: pointer;
+                    }
+                }
             }
         }
     }

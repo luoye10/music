@@ -9,7 +9,7 @@ Vue.use(ElementUI);
 Vue.use(EvaIcons);
 
 
-import './error/error';
+// import './error/error';
 import App from './App';
 // import router from './router/router'
 

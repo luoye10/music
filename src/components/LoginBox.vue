@@ -128,7 +128,6 @@ export default {
                     top: 2px;
                 }            
                 input{
-                    font-family: my; 
                     width: 100%;
                     height: 30px;
                     background: rgba(192, 227, 255, 0.521);

@@ -96,6 +96,7 @@ module.exports = {
         new hotModuleReplacementPlugin()
     ],
     devServer: {
+        hot: true,
         proxy: {
             '/api': {
                 target: 'http://192.168.1.125:3000/',
