@@ -4,6 +4,7 @@
             <div class="music">
                 <eva-icon width="30" height="30" name="music" animation="pulse" fill="white" class="music-icon"></eva-icon>
                 <div class="word">网易云音乐</div>
+                <eva-icon width="30" height="30" name="collapse" fill="white" class="back" @click="hideComment"></eva-icon>
             </div>
             <div class="information">
                 <img :src="src" class="img">
@@ -78,7 +79,7 @@
         </div>
         <div class="song-list">
             <ul class="songs" ref="songs">
-                <li class="song-item" :class="{active: index === playIndex}" @click="startPlay(song.id, index)" v-for="(song, index) in songs" :key="song.id">
+                <li class="song-item" :class="{active: song.id === playId}" @click="startPlay(song.id, index)" v-for="(song, index) in songs" :key="song.id">
                     <div class="num">{{song.num}}</div>
                     <div class="name">{{song.name}}</div>
                     <div class="singer">{{song.singer}}</div>
@@ -86,7 +87,15 @@
                     <div class="time">{{song.time}}</div>
                 </li>
             </ul>
+            <Pagination @pageChange="songsList" :total="pageTotal" :size="pageSize" :key="initKey"></Pagination>
         </div>
+        <ul class="song">
+            <div  @click="show">
+                <eva-icon weidth="50" height="50" name="expand" animation="pulse" fill="grey" class="expand"></eva-icon>
+            </div>          
+            <li class="song-name">{{songName}}</li>
+            <li class="song-singer">{{songSinger}}</li>
+        </ul>
         <div class="play-bar">
             <div class="prev-play-next">
                 <eva-icon name="skip-back" fill="aqua" @click="previous" width="24" height="24"></eva-icon>
@@ -104,9 +113,10 @@
                 <div class="total-time">{{totalTime}}</div>
             </div>
             <div class="play-type">
-
+                
             </div>
         </div>
+        <SongLyric v-show="isShowLyric" :playId="playId" :key="lyricKey"></SongLyric> 
         <audio :src="playSrc" ref="audio" @timeupdate="timechange"></audio>
     </div>   
 </template>
@@ -114,7 +124,13 @@
 import avatar from '../img/z.jpg'
 import request from '../utils/request'
 import layer from '../utils/zLayer'
+import Pagination from '../components/Pagination'
+import SongLyric from '../components/SongLyric'
 export default {
+    components: {
+        Pagination,
+        SongLyric
+    },
     data(){
         return {
             src: avatar,
@@ -130,18 +146,30 @@ export default {
             playListId: null,
             currentTime: '00:00',
             percentage: '0',
-            totalTime: '00:00'
+            totalTime: '00:00',
+            playIndex: '',
+            playId: null,
+            pageTotal: 0,
+            pageSize: 10,
+            initKey: 1,
+            songName: '',
+            songSinger: '',
+            ret: '',
+            isShowLyric: false,
+            lyricKey: Math.random().toString(16).slice(2)
         }
     },
     mounted() {        
         this.getInfo();
         let info = this.$route.params.loginI
+        if (!info) {
+            info = localStorage.getItem('loginInfo')
+        }
         info = JSON.parse(info)
         let avatarUrl = info.profile.avatarUrl
         this.src = avatarUrl
         let name = info.profile.nickname
-        this.text = name
-        console.log(info)
+        this.text = name    
     },
     methods: {
         handleClick(){
@@ -151,7 +179,7 @@ export default {
             let info = localStorage.getItem('loginInfo')
             info = JSON.parse(info)
             let uid = info.profile.userId
-            let url = 'http://192.168.1.3:3000/user/playlist?uid=' + uid
+            let url = 'http://192.168.0.105:3000/user/playlist?uid=' + uid
             let that = this
             request({
                 url: url,
@@ -160,18 +188,18 @@ export default {
                 callback: function(res) {
                     let list = JSON.parse(res).playlist
                     that.playLists = list
-                    // console.log(res)
                 }
             })
         },
         getListDetail(id) {
             this.playListId = id;
-            let url = 'http://192.168.1.3:3000/playlist/detail?id=' + id
+            let url = 'http://192.168.0.105:3000/playlist/detail?id=' + id
             request({
                 type: 'get',
                 url: url,
                 callback: (res) => {
                     let songs = JSON.parse(res)
+                    this.pageTotal = songs.playlist.trackCount
                     songs = songs.playlist.tracks
                     let arr = songs.map((item,index) => {
                         index++
@@ -185,11 +213,17 @@ export default {
                             totalTime: item.dt
                         }
                     })
-                    this.songs = arr
-                    // debugger
-                    console.log(this.songs)
+                    this.$refs.audio.pause()
+                    this.totalSongs = arr
+                    this.songs = arr.slice(0, 10)                   
+                    this.initKey++
                 }
             })
+        },
+        songsList(page) {
+            let start = (page - 1) * this.pageSize
+            let end = page * this.pageSize
+            this.songs = this.totalSongs.slice(start, end)
         },
         timeDeal(time) {
             let m = '',s = ''
@@ -200,8 +234,9 @@ export default {
             return m + ':' + s;
         }, 
         startPlay(id, index) {
+            this.playId = id
             this.playIndex = index
-            let url = 'http://192.168.1.3:3000/song/url?id=' + id;
+            let url = 'http://192.168.0.105:3000/song/url?id=' + id;
             request({
                 url: url,
                 type: 'get',
@@ -220,6 +255,8 @@ export default {
                     this.$refs.audio.play();
                     this.isPlay = true;
                     this.totalTime = this.songs[index].time
+                    this.songName = this.songs[index].name
+                    this.songSinger = this.songs[index].singer
                 }
             })
         },
@@ -240,8 +277,6 @@ export default {
             let index = this.playIndex
             let song = this.songs[index]
             this.startPlay(song.id, index)
-            console.log(song)
-
         },
         next(){
             if (this.playIndex === this.songs.length - 1) {
@@ -253,7 +288,6 @@ export default {
             let index = this.playIndex
             let song = this.songs[index]
             this.startPlay(song.id, index)
-            console.log(song)
         },
         timechange(e) {
             let time = e.target.currentTime, per
@@ -286,6 +320,15 @@ export default {
             if(this.$refs.audio.ended){
                 this.next()
             }
+        },
+        show(){
+            if (this.playId) {
+                this.isShowLyric = true
+                this.lyricKey = Math.random().toString(16).slice(2)       
+            }
+        },
+        hideComment() {
+            this.isShowLyric = false
         }
     }
 }
@@ -318,10 +361,12 @@ export default {
                 }
                 .word{
                     font-size: 20px;
-                    position: absolute;
-                    left: 50px;
-                    top: 30px;
+                    display: inline-block;
                     letter-spacing: .3em;
+                }
+                .back{
+                    cursor: pointer;
+
                 }
             }
             .information{
@@ -558,6 +603,24 @@ export default {
                 }
             }
         }
+        .song{
+            position: absolute;
+            left: 0;
+            bottom: @barHeight;
+            width: 218px;
+            height: 60px;
+            border: 1px dashed aqua;
+            line-height: 30px;
+            text-align: center;
+            .expand{
+                position: absolute;
+                left: 0;
+                top: 20px;
+            }
+            .song-singer{
+                color: grey;
+            }
+        }
         .play-bar{
             position: absolute;
             left: 0;
@@ -579,7 +642,7 @@ export default {
                 }
             }
             .play-type{
-                width: 200px;
+                width: 300px; 
             }
             .center-bar{
                 flex: 1;

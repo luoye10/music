@@ -4,6 +4,7 @@ import 'element-ui/lib/theme-chalk/index.css';
 import './css/global.css';
 import EvaIcons from 'vue-eva-icons';
 import router from './router/router';
+import './utils/moment'
 
 Vue.use(ElementUI);
 Vue.use(EvaIcons);

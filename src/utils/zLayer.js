@@ -1,4 +1,4 @@
-var colorlist = {
+var colorList = {
     success: 'green',
     error: 'red',
     init: 'gray'
@@ -29,7 +29,7 @@ function createElement(tag) {
 function layers(obj) {
     var el = createElement('div');
     el.style = 'position: absolute; left: 50%; top: 50%; transform: translateX(-50%); background: gray;opacity: 0; transition: all .5s;padding: 10px 15px; border-radius: 5px;color: #fff;'
-    el.className = 'zlayer'
+    el.className = 'zLayer'
     el.innerText = obj.msg || ''
     layerShow(el, obj.color || 'init');
     layerHide(el, obj.time, obj.fn);
@@ -37,7 +37,7 @@ function layers(obj) {
 
 function layerShow(el, color) {
     document.body.appendChild(el);
-    el.style.background = colorlist[color]; 
+    el.style.background = colorList[color]; 
     setTimeout(function() {
         el.style.marginTop = '-10px';
         el.style.opacity = 1;

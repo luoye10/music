@@ -1,6 +1,6 @@
 <template>
     <div class="background">
-       <ul class="login-box">
+        <ul class="login-box">
             <li class="login">用户登录</li>
             <li class="name">
                 <div class="container">
@@ -15,7 +15,7 @@
                 </div>
             </li>
             <li class="login-container">
-                <div class="submit" @click="login">提交</div>
+                <div class="submit" @click="login">登录</div>
             </li>
         </ul> 
     </div>    
@@ -44,15 +44,10 @@ export default {
                 })
                 return
             }
-            // console.log(this.$router)
-            // debugger
             var that = this;
-            // that.$router.push({name:'HomePage'});
-            // return
-
             request({
                 type: 'get',
-                url: 'http://192.168.1.3:3000/login/cellphone',
+                url: 'http://192.168.1.101:3000/login/cellphone',
                 data: {
                     phone: this.name,
                     password: this.password
@@ -60,14 +55,19 @@ export default {
                 callback: function(res) {
                     var obj = res;
                     obj = JSON.parse(obj);
-                    localStorage.setItem('loginInfo', res)
+                    localStorage.setItem('loginInfo', res);
                     that.$root.loginUser = res;
                     if(obj.code === 200){
                         layers({
                             msg: '登录成功',
                             color: 'success',
                             fn: function(){
-                                that.$router.push({name:'HomePage',params:{loginI: res}});
+                                that.$router.push({
+                                    name:'HomePage',
+                                    params:{
+                                        loginI: res
+                                    }
+                                });
                             }
                         })
                     }else{
@@ -89,7 +89,7 @@ export default {
         width: 100%;
         height: 100%;
         position: relative;
-        background: url('https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1589184673447&di=a552668961469b8ab40c49a07e3debad&imgtype=0&src=http%3A%2F%2Fattachments.gfan.com%2Fforum%2Fattachments2%2Fday_110325%2F110325225516f1575c1ca99d8f.jpg') center;
+        background: url('https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1589184673447&di=a552668961469b8ab40c49a07e3debad&imgtype=0&src=http%3A%2F%2Fattachments.gfan.com%2Fforum%2Fattachments2%2Fday_110325%2F110325225516f1575c1ca99d8f.jpg') no-repeat center;
         ul,li{
             margin: 0;
             padding: 0;

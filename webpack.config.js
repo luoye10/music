@@ -3,20 +3,19 @@ var webpack = require('webpack');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var VueLoaderPlugin = require('vue-loader/lib/plugin');
-var webpackBar  = require('webpackbar');
+var webpackBar = require('webpackbar');
 var proxy = require('http-proxy-middleware');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const hotModuleReplacementPlugin = require('webpack/lib/HotModuleReplacementPlugin');
 
 module.exports = {
     performance: {
-        hints: "warning", // 枚举
+        hints: 'warning', // 枚举
         maxAssetSize: 30000000, // 整数类型（以字节为单位）
         maxEntrypointSize: 50000000, // 整数类型（以字节为单位）
         assetFilter: function(assetFilename) {
             // 提供资源文件名的断言函数
             return assetFilename.endsWith('.js');
-        
         }
     },
     mode: 'development',
@@ -41,17 +40,17 @@ module.exports = {
             },
             {
                 test: /\.css$/,
-                use: ['style-loader','css-loader']
+                use: ['style-loader', 'css-loader']
             },
             {
                 test: /\.less$/,
-                use: ['style-loader','css-loader','postcss-loader','less-loader']
+                use: ['style-loader', 'css-loader', 'postcss-loader', 'less-loader']
             },
             {
-                test: /.html$/,
+                test: /\.html$/,
                 use: {
                     loader: 'html-loader',
-                    options: {minimize: true}
+                    options: { minimize: true }
                 }
             },
             {
@@ -79,7 +78,7 @@ module.exports = {
         ]
     },
     resolve: {
-        extensions: ['.js','.json','.vue','.css','.less'],
+        extensions: ['.js', '.json', '.vue', '.css', '.less'],
         alias: {
             '@': path.resolve(__dirname, 'src')
         }
@@ -99,10 +98,10 @@ module.exports = {
         hot: true,
         proxy: {
             '/api': {
-                target: 'http://192.168.1.125:3000/',
+                target: 'http://192.168.0.105:3000/',
                 changeOrigin: true,
-                pathRewrite: { "^/api":"/" }
+                pathRewrite: { '^/api': '/' }
             }
         }
     }
-}
+};
